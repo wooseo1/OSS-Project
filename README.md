@@ -17,7 +17,8 @@ Chung et al.의 한국어 구음장애 Whisper 연구를 재현 대상으로 삼
 | 실제 음성 헤더 확인, mono/16kHz 변환 | 구현·실제 샘플 검증 |
 | 기본 Whisper / 선행연구 모델 비교 | 샘플 4개, 두 모델 총 8회 추론 |
 | 출력·추론 시간·조건 저장 | 구현 |
-| 발화별 음성·정답 정렬과 CER/WER 평가 | 다음 작업 |
+| 파일 전체 정답을 이용한 CER/WER 평가 | 4개 파일, 처리 조건 비교 포함 20회 완료 |
+| 발화별 음성·정답 정렬 | 다음 작업 |
 | LoRA·Adapter 기반 개인화 학습 | 계획 |
 | 사용자 서비스 화면 | 계획 |
 
@@ -109,10 +110,31 @@ AI Hub 원본은 GitHub에 올리지 않습니다. 각자 데이터를 내려받
 ## 평가 범위
 
 샘플의 정답은 파일 전체 Transcript이며 발화 타임스탬프가 없습니다.
-따라서 30초 추론 결과에 파일 전체 정답을 붙여 CER/WER를 계산하지 않습니다.
-동일 구간에서 두 모델이 실행되는지 확인하는 단계이며 정량적 개선 주장의 근거로 쓰지 않습니다.
+따라서 위의 30초 추론 결과에 파일 전체 정답을 붙여 CER/WER를 계산하지 않습니다.
+짧은 구간 비교는 두 모델이 실행되는지 확인하는 단계입니다.
+별도의 [파일 전체 평가](docs/evaluation.md)는 전체 WAV를 입력하고 전체 정답과 비교해 CER/WER를 계산합니다.
 원 연구 학습 데이터와의 중복 여부도 미확인입니다.
-정량 평가는 발화별 음성·정답 정렬과 적절한 화자/문장 분할을 확보한 뒤 추가합니다.
+개인화 모델의 정량 평가는 발화별 음성·정답 정렬과 적절한 화자/문장 분할을 확보한 뒤 추가합니다.
+
+## 파일 전체 실험
+
+첫 실험은 [2026-10-11 샘플 평가 결과](docs/experiments/2026-10-11-sample-evaluation.md)에 정리했습니다.
+무음 제거 후 묶음 처리에서 기본 Whisper의 통합 CER은 15.63%, 선행 모델은 4.36%였습니다.
+VAD 구간별 독립 처리에서는 각각 17.60%, 31.52%로 악화됐습니다.
+단일 화자 표기의 샘플 4개에 대한 관측값이며 일반적인 성능 개선이나 개인화 효과를 뜻하지 않습니다.
+
+```sh
+.venv/bin/python -m pip install -r requirements-eval.txt
+.venv/bin/python -m unittest discover -s tests -v
+.venv/bin/python scripts/evaluate_full.py \
+  --data-root ../datasets/aihub-dysarthria \
+  --baseline ../models/whisper-small-ct2 \
+  --adapted ../models/whisper-dysarthria-general-ct2 \
+  --output-dir outputs/full-eval \
+  --no-vad-first-file
+```
+
+새 출력 폴더를 지정해야 합니다. 전체 파일 평가, 발화별 독립 추론, 무음 제거 유무 비교와 지표 정의는 [평가 방법](docs/evaluation.md)에 있습니다. 이 실험은 기존 모델의 탐색 평가이며 독립 테스트나 개인화 학습 결과가 아닙니다.
 
 ## 다음 개발 순서
 
@@ -133,8 +155,12 @@ AI Hub 원본은 GitHub에 올리지 않습니다. 각자 데이터를 내려받
 main.py                      # 실행 진입점
 scripts/sample_compare.py    # 데이터 점검과 동일 구간 추론
 scripts/convert_model.py     # 학습 모델을 CPU 추론 형식으로 변환
+scripts/evaluate_full.py     # 전체 파일 정답으로 CER/WER와 처리 조건 비교
 requirements.txt             # 추론 의존성
 requirements-convert.txt     # 변환 포함 의존성
+requirements-eval.txt        # 지표 계산 포함 의존성
+tests/test_evaluation.py     # 오류 개수·합산·발화 연결 검증
+docs/evaluation.md           # 전체 파일 평가 방법
 docs/research-base.md         # 선행연구·모델 버전·검증 기록
 CONTRIBUTING.md               # 팀 협업과 커밋 안내
 ```
