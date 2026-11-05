@@ -1,0 +1,11 @@
+# PyTorch 는 먼저 별도로 설치 (CUDA 버전에 맞춰서). 예: https://pytorch.org/get-started/locally/
+# 아래는 그 외 패키지
+transformers>=4.40
+peft>=0.10
+accelerate>=0.30
+soundfile
+librosa
+numpy
+# 평가(CT2 모델) / 변환용
+faster-whisper
+ctranslate2
