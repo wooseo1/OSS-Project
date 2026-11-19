@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Whisper Meet Captions",
+  "version": "1.0.0",
+  "description": "Show local Whisper transcription over Google Meet and place reviewed text in chat.",
+  "permissions": ["clipboardWrite"],
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "http://127.0.0.1:8765/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
